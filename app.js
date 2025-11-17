@@ -8,7 +8,8 @@ const methodOverride = require('method-override');
 const ejsMate=require("ejs-mate");
 const wrapAsync=require("./utils/wrapAsync.js");
 const expressError=require("./utils/expressError.js");
-const {listingSchema}=require("./schema.js");
+const {listingSchema,reviewSchema}=require("./schema.js");
+const Review=require("./models/review.js");
 
 port=3000;
 
@@ -24,6 +25,17 @@ app.engine('ejs', ejsMate);
 
 const validateListing=(req,res,next)=>{
     let{error}=listingSchema.validate(req.body);
+    if(error){
+        let errMsg=error.details.map((el)=>el.message).join(",");
+        throw new expressError(400,errMsg);
+    }
+    else{
+        next();
+    }
+}
+
+const validateReview=(req,res,next)=>{
+    let{error}=reviewSchema.validate(req.body);
     if(error){
         let errMsg=error.details.map((el)=>el.message).join(",");
         throw new expressError(400,errMsg);
@@ -61,7 +73,7 @@ app.get("/listings/new",(req,res)=>{
 //show route
 app.get("/listings/:id",wrapAsync(async(req,res)=>{
     let {id}=req.params;
-    const listing=await Listing.findById(id);
+    const listing=await Listing.findById(id).populate("reviews");
     res.render("listings/show.ejs",{listing});
     
 }));
@@ -95,13 +107,40 @@ app.delete("/listings/:id",wrapAsync(async(req,res)=>{
     res.redirect("/listings");
 }));
 
+//Reviews
+//post review route
+app.post("/listings/:id/reviews",validateReview,wrapAsync(async(req,res)=>{
+    let listing=await Listing.findById(req.params.id);
+    let newReview=new Review(req.body.review);
+    console.log(newReview);
+
+    listing.reviews.push(newReview);
+
+    await newReview.save();
+    await listing.save();
+
+    console.log("new review saved");
+    res.redirect(`/listings/${listing._id}`)
+}));
+
+//delete review route
+app.delete("/listings/:id/reviews/:reviewId",wrapAsync(async(req,res)=>{
+    let{id,reviewId}=req.params;
+
+    await Listing.findByIdAndUpdate(id,{$pull:{reviews:reviewId}})
+    await Review.findByIdAndDelete(reviewId);
+
+    res.redirect(`/listings/${id}`);
+}))
+
+
 // Catch everything using a path that won't be parsed as a malformed token
 app.use((req, res, next) => {
   next(new expressError(404, "Page not found"));
 });
 
 
-app.all(/.*/,(err,req,res,next)=>{
+app.use((err,req,res,next)=>{
     let{status=500,message="something went wrong"}=err;
     res.status(status).render("error.ejs",{message,status});
 });
