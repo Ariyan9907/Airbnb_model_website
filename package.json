@@ -9,6 +9,7 @@
   "author": "ariyan_pujari",
   "license": "ISC",
   "dependencies": {
+    "connect-flash": "^0.1.1",
     "ejs": "^3.1.10",
     "ejs-mate": "^4.0.0",
     "express": "^5.1.0",
@@ -16,6 +17,8 @@
     "joi": "^18.0.1",
     "method-override": "^3.0.0",
     "mongoose": "^8.19.3",
+    "passport-local": "^1.0.0",
+    "passport-local-mongoose": "^8.0.0",
     "path": "^0.12.7"
   }
 }
