@@ -4,32 +4,34 @@ const wrapAsync=require("../utils/wrapAsync.js");
 const {listingSchema,reviewSchema}=require("../schema.js");
 const expressError=require("../utils/expressError.js");
 const Listing=require("../models/listing.js");
+const multer = require("multer");
+const {storage}=require("../cloudConfig.js");
+const upload = multer({ storage })
 const {isLoggedIn, isOwner,validateListing,isReviewAuthor}=require("../middleware.js");
 
 const listingController=require("../controllers/listings.js");
 
-
-
-//index route
-router.get("/",wrapAsync(listingController.index));
+//index route and create route
+router.route("/")
+.get(wrapAsync(listingController.index))
+.post(isLoggedIn,validateListing,upload.single('listing[image]'),wrapAsync(listingController.createListing))
+// .post(upload.single('listing[image]'),(req,res)=>{
+//     res.send(req.file);
+// })
 
 //new route
 router.get("/new",isLoggedIn,listingController.renderNewForm);
 
-//show route
-router.get("/:id",wrapAsync(listingController.showListing));
+//show update and destroy route
+router.route("/:id")
+.get(wrapAsync(listingController.showListing))
+.put(isLoggedIn,isOwner,upload.single('listing[image]'),validateListing,wrapAsync(listingController.updateListing))
+.delete(isLoggedIn,isOwner,wrapAsync(listingController.deleteListing))
 
-//create route
-router.post("/",isLoggedIn,validateListing,wrapAsync(listingController.createListing));
+
 
 //edit route
 router.get("/:id/edit",isLoggedIn,isOwner,wrapAsync(listingController.RenderEditListing));
-
-//update route
-router.put("/:id",isLoggedIn,isOwner,validateListing,wrapAsync(listingController.updateListing));
-
-//destroy route
-router.delete("/:id",isLoggedIn,isOwner,wrapAsync(listingController.deleteListing));
 
 
 module.exports=router;
