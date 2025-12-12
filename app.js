@@ -76,9 +76,9 @@ const sessionOptions = {
   }
 }
 
-// app.get("/",(req,res)=>{
-//     res.send("All the rotes working and you are at root");
-// });
+app.get("/",(req,res)=>{
+    res.redirect("/listings");
+});
 
 app.use(session(sessionOptions));
 app.use(flash());
